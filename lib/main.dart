@@ -10,9 +10,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-           title: 'Startup Name Generator',
-           home: RandomWords(),
+    return MaterialApp(
+      title: 'Startup Name Generator',
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+      ),
+      home: const RandomWords(),
     );
   }
 }
@@ -27,15 +33,57 @@ class RandomWords extends StatefulWidget {
 class _RandomWordsState extends State<RandomWords> {
   @override
   final _suggestions = <WordPair>[];
+  final _saved = <WordPair>{};
   final _biggerFont = const TextStyle(fontSize: 18);
+
+  void _pushSaved() {
+    // context is a locate of widget
+    Navigator.of(context).push(
+        MaterialPageRoute<void>(
+            builder: (context) {
+              final tiles = _saved.map(
+                      (pair) {
+                    return ListTile(
+                      title: Text(
+                        pair.asPascalCase,
+                        style: _biggerFont,
+                      ),
+                    );
+                  }
+              );
+              final divider = tiles.isNotEmpty
+                  ? ListTile.divideTiles(
+                  context: context,
+                  tiles: tiles
+              ).toList()
+                  : <Widget>[];
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text("Likes enregistrés"),
+                ),
+                body: ListView(children: divider,),
+              );
+            }
+        ),
+    );
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Startup Name Generator'),
+        actions: [
+          IconButton(
+            onPressed: _pushSaved,
+            icon: const Icon(Icons.list),
+            tooltip: "Likes enregistrés",
+          )
+        ],
       ),
       body: _buildSuggestions(),
     );
   }
+
   Widget _buildSuggestions() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -52,12 +100,28 @@ class _RandomWordsState extends State<RandomWords> {
       },
     );
   }
+
   Widget _buildRow(WordPair pair) {
+    final alreadySaved = _saved.contains(pair);
     return ListTile(
       title: Text(
         pair.asPascalCase,
         style: _biggerFont,
       ),
+      trailing: Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+        semanticLabel: alreadySaved ? "Effecer des likes" : "Liké",
+      ),
+      onTap: () {
+        setState(() {
+          if (alreadySaved) {
+            _saved.remove(pair);
+          } else {
+            _saved.add(pair);
+          }
+        });
+      },
     );
   }
 }
